@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.0;
+
+contract market{
+    struct item{
+        string name ;
+        string description;
+        uint price;
+        address payable seller;
+        bool available;
+    
+
+    }
+     mapping (uint => item)public items;
+     uint itemcount;
+     event ItemListed(uint256 itemId, string name, uint256 price, address seller);
+    event OrderPlaced(uint256 itemId, address buyer);
+    event TransactionCompleted(uint256 itemId, address buyer, address seller, uint256 price);
+     constructor ()  {
+        itemcount = 0;
+
+     }  
+    function addItem(string memory _name, string memory _description, uint _price)public {
+        itemcount++;
+
+          item storage newitem = items[itemcount];
+          newitem.name=_name;
+          newitem.description=_description;
+          newitem.price=_price;
+          newitem.available=true;
+        emit ItemListed(itemcount, _name, _price, msg.sender);
+        
+    }
+    function placeOrder(uint Id)public payable {
+        require(Id>0 && Id<=itemcount,"invalid id");
+        item storage Item = items[Id];
+        require(Item.available," apne kam se kam rkho item not available");
+        require(msg.value==Item.price,"insufficient balance");
+        Item.available = false;
+        emit OrderPlaced(Id, msg.sender);
+    } 
+    function compelteTransaction(uint Id)public{
+            item storage Item = items[Id];
+
+        require(Item.available," apne kam se kam rkho item not available");
+        require(Id > 0 && Id <= itemcount, "Invalid item ID");
+        require(msg.sender != Item.seller, "Seller cannot complete the transaction");
+         Item.seller.transfer(Item.price);
+        
+        emit TransactionCompleted(Id, msg.sender, Item.seller, Item.price);
+
+    } 
+  function getItem(uint256 Id) public view returns (string memory, string memory, uint256, address, bool) {
+        require(Id > 0 && Id <= itemcount, "Invalid item ID");
+        item storage Item = items[Id];
+        
+        return (Item.name, Item.description, Item.price, Item.seller, Item.available);
+    }
+
+
+
+
+}
